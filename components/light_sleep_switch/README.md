@@ -3,6 +3,9 @@ A component to support entering and exiting Light Sleep on ESP32. With example c
 ```yaml
 # example configuration:
 
+external_components:
+  - source: github://calebns/esphome_custom_components
+
 esp32:
   board: esp32dev
   framework:
