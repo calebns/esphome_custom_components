@@ -37,3 +37,26 @@ wifi:
   on_disconnect:
     - switch.turn_off: light_sleep_sw
 ```
+
+If YAML configuration does not provide any periodic way to wake up the ESP32, the light sleep component refuses to enter LightSleep mode. To workaround this issue the dummy switch can be added which periodically toggles. Code below will guarantee the sustem wakes up at least every 200ms. 
+
+The code below is required for Sonoff MINIR4 if GPIO wakeup is not provided. Espressif SDK can wake up only on GPIO_RISING_EDGE or GPIO_FALLING_EDGE, not GPIO_ANY_EDGE. This makes it difficult to be used with a bistable wall switch. Momentary switch could resolve the problem, but I've decided to integrate following workaround instead.
+
+```yaml
+switch:
+  - platform: template
+    name: "Dummy Switch"
+    id: dummyswitch
+    lambda: |-
+        return false;
+    turn_on_action:
+      - lambda: return;
+    turn_off_action:
+      - lambda: return;
+    internal: true
+
+interval:
+  - interval: 200ms
+    then:
+      - switch.toggle: dummyswitch
+```
