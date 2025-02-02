@@ -1,3 +1,5 @@
+A component to support entering and exiting Light Sleep on ESP32. With example config applied to Sonoff MINIR4 the power consumption dropped from 0.7W to 0.09W in idle while still maintaining stable WiFi connection (values measured at wall outlet at 230V AC, should be about 0.06W at 110V AC).
+
 ```yaml
 # example configuration:
 
