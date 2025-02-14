@@ -1,0 +1,163 @@
+substitutions:
+  device_name: sonoff-dualr3-rev1
+
+external_components:
+  - source: github://calebns/esphome_custom_components
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    version: recommended
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: y
+      CONFIG_FREERTOS_HZ: '1000'
+      CONFIG_PM_USE_RTC_TIMER_REF: y
+      CONFIG_XTAL_FREQ_40: y
+      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ: '80000000'
+      CONFIG_PM_DFS_INIT_AUTO: n
+      CONFIG_FREERTOS_USE_TICKLESS_IDLE: y
+      CONFIG_PM_ENABLE: y
+      CONFIG_PM_SLP_IRAM_OPT: y
+      CONFIG_PM_RTOS_IDLE_OPT: y
+      CONFIG_ESP_WIFI_SLP_IRAM_OPT: y
+      CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP: y
+      CONFIG_PM_PROFILING: y
+
+esphome:
+  name: ${device_name}
+  friendly_name: Sonoff Dual R3 rev1
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_key
+  reboot_timeout: 10min
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: light
+  reboot_timeout: 10min
+  on_connect:
+    - switch.turn_on: light_sleep_sw
+  on_disconnect:
+    - switch.turn_off: light_sleep_sw
+
+captive_portal:
+
+light:
+  - platform: status_led
+    name: "LED"
+    id: led_status
+    pin:
+      number: GPIO13
+      inverted: True
+    internal: True
+
+switch:
+  - platform: gpio
+    name: "1"
+    pin: GPIO27
+    id: relay_1
+
+  - platform: gpio
+    name: "2"
+    pin: GPIO14
+    id: relay_2
+
+  - platform: light_sleep_switch
+    name: Light Sleep Switch
+    id: light_sleep_sw
+    internal: true
+
+binary_sensor:
+  - platform: gpio
+    name: "Button"
+    id: sensor_button
+    pin:
+      number: GPIO00
+      mode:
+        input: True
+        pullup: True
+      inverted: True
+    disabled_by_default: True
+    icon: 'mdi:radiobox-blank'
+    filters:
+      - delayed_on: 50ms
+    on_press:
+      - switch.toggle: relay_1
+    internal: True
+
+  - platform: gpio
+    name: "1"
+    pin:
+      number: GPIO32
+      mode:
+        input: True
+        pullup: True
+      inverted: True
+    filters:
+      - delayed_on_off: 50ms
+    on_press:
+      - switch.toggle: relay_1
+    on_release:
+      - switch.toggle: relay_1
+    internal: True
+
+  - platform: gpio
+    name: "2"
+    pin:
+      number: GPIO33
+      mode:
+        input: True
+        pullup: True
+      inverted: True
+    filters:
+      - delayed_on_off: 50ms
+    on_press:
+      - switch.toggle: relay_2
+    on_release:
+      - switch.toggle: relay_2
+    internal: True
+
+uart:
+  tx_pin: GPIO25
+  rx_pin: GPIO26
+  baud_rate: 38400
+  parity: EVEN
+  stop_bits: 1
+
+sensor:
+# Extra sensor to keep track of plug uptime
+- platform: uptime
+  name: ${device_name}_Uptime Sensor
+  filters:
+    - lambda: return x / 86400;
+  unit_of_measurement: "days"
+  accuracy_decimals: 2
+# Extra sensor for WiFi signal
+- platform: wifi_signal
+  name: ${device_name}_WiFi Sensor
+
+- platform: cse7761
+  update_interval: 60s
+  voltage:
+    name: 'Voltage'
+  current_1:
+    name: 'Current 1'
+    disabled_by_default: True
+  current_2:
+    name: 'Current 2'
+    disabled_by_default: True
+  active_power_1:
+    name: 'Power 1'
+  active_power_2:
+    name: 'Power 2'
