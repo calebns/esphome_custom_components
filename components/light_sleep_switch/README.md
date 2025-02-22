@@ -67,3 +67,23 @@ interval:
     then:
       - switch.toggle: dummyswitch
 ```
+
+If GPIO switch is used then additional steps must be taken. When ESP32 enters light sleep it disables power to GPIO peripheral. To retain GPIO state the pin must be put into hold mode, which forces the GPIO to be always in the current state. When GPIO value needs to be changed, the hold mode must be disabled and reenabled to latch the new value. Example code:
+
+```
+wifi:
+  on_connect:
+    - lambda: |-
+        gpio_hold_en(GPIO_NUM_14);
+    - switch.turn_on: light_sleep_sw
+
+switch:
+- platform: gpio
+    name: "1"
+    pin: GPIO14
+    id: relay_1
+    on_turn_on:
+    - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
+    on_turn_off:
+    - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
+```
