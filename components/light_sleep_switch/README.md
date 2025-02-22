@@ -70,7 +70,7 @@ interval:
 
 If GPIO switch is used then additional steps must be taken. When ESP32 enters light sleep it disables power to GPIO peripheral. To retain GPIO state the pin must be put into hold mode, which forces the GPIO to be always in the current state. When GPIO value needs to be changed, the hold mode must be disabled and reenabled to latch the new value. Example code:
 
-```
+```yaml
 wifi:
   on_connect:
     - lambda: |-
