@@ -48,6 +48,8 @@ wifi:
   reboot_timeout: 10min
   on_connect:
     - switch.turn_on: light_sleep_sw
+    - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
+    - lambda: "gpio_hold_dis(GPIO_NUM_27); gpio_hold_en(GPIO_NUM_27);"
   on_disconnect:
     - switch.turn_off: light_sleep_sw
 
@@ -67,11 +69,23 @@ switch:
     name: "1"
     pin: GPIO27
     id: relay_1
+    on_turn_off: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_27); gpio_hold_en(GPIO_NUM_27);"
+    on_turn_on: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_27); gpio_hold_en(GPIO_NUM_27);"
 
   - platform: gpio
     name: "2"
     pin: GPIO14
     id: relay_2
+    on_turn_off: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
+    on_turn_on: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
 
   - platform: light_sleep_switch
     name: Light Sleep Switch
