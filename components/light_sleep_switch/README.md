@@ -1,6 +1,6 @@
 A component to support entering and exiting Light Sleep on ESP32. With example config applied to Sonoff MINIR4 the power consumption dropped from 0.7W to 0.09W in idle while still maintaining stable WiFi connection (values measured at wall outlet at 230V AC, should be about 0.06W at 110V AC).
 
-WARNING: Due to different partition schema between Arduino and IDF SDKs it is suggested to program the ESP32 chip using UART for the first time. Otherwise the old partition with Arduino firmware might be started after power cycle.
+**WARNING: Due to different partition schema between Arduino and IDF SDKs it is required to do the initial migration using UART not OTA. Otherwise, the old Arduino image will be run after the power cycle.**
 
 ```yaml
 # example configuration:
