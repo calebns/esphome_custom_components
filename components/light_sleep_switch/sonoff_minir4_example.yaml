@@ -1,5 +1,5 @@
 substitutions:
-  device_name: sonoff_minir4
+  device_name: sonoff-minir4
 
 esp32:
   board: esp32dev
@@ -51,6 +51,8 @@ wifi:
   reboot_timeout: 10min
   on_connect:
     - switch.turn_on: light_sleep_sw
+    - lambda: "gpio_hold_dis(GPIO_NUM_26); gpio_hold_en(GPIO_NUM_26);"
+    - lambda: "gpio_hold_dis(GPIO_NUM_19); gpio_hold_en(GPIO_NUM_19);"
   on_disconnect:
     - switch.turn_off: light_sleep_sw
 
@@ -58,7 +60,7 @@ captive_portal:
 
 switch:
   - platform: light_sleep_switch
-    name: Light Sleep Switch
+    name: Empty switch
     id: light_sleep_sw
     internal: true
 
@@ -73,24 +75,31 @@ switch:
       - lambda: return;
     internal: true
 
-
-output:
   # Physical relay on GPIO
   - platform: gpio
     pin: GPIO26
     id: relay_1
+    name: ${device_name}
+    on_turn_on:
+      then:
+        - switch.turn_on: led
+        - lambda: "gpio_hold_dis(GPIO_NUM_26); gpio_hold_en(GPIO_NUM_26);"
+    on_turn_off:
+      then:
+        - switch.turn_off: led
+        - lambda: "gpio_hold_dis(GPIO_NUM_26); gpio_hold_en(GPIO_NUM_26);"
+
   - platform: gpio
     pin: GPIO19
     inverted: true
     id: led
-
-light:
-  - platform: binary
-    id: light_1
-    name: ${device_name}
-    icon: mdi:ceiling-light-multiple-outline
-    restore_mode: restore_default_off
-    output: relay_1
+    on_turn_off: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_19); gpio_hold_en(GPIO_NUM_19);"
+    on_turn_on: 
+      then:
+        - lambda: "gpio_hold_dis(GPIO_NUM_19); gpio_hold_en(GPIO_NUM_19);"
+    internal: true
 
 binary_sensor:
   - platform: gpio
@@ -100,8 +109,8 @@ binary_sensor:
       - invert:
       - delayed_off: 50ms
     on_press:
-      - light.toggle:
-          id: light_1
+      - switch.toggle:
+          id: relay_1
 
   - platform: gpio
     name: s1
@@ -112,19 +121,15 @@ binary_sensor:
       - delayed_off: 50ms
     on_press:
       then:
-        - light.toggle:
-            id: light_1
-        - output.turn_on:
-            id: led
+        - switch.toggle:
+            id: relay_1
     on_release:
       then:
-        - light.toggle:
-            id: light_1
-        - output.turn_off:
-            id: led
+        - switch.toggle:
+            id: relay_1
 
 interval:
-  - interval: 200ms
+  - interval: 300ms
     then:
       - switch.toggle: dummyswitch
 
