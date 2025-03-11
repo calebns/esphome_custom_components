@@ -87,3 +87,28 @@ switch:
     on_turn_off:
     - lambda: "gpio_hold_dis(GPIO_NUM_14); gpio_hold_en(GPIO_NUM_14);"
 ```
+
+If using Modbus, Light Sleep has to be disabled for the whole communication phase. This may be acomplished with the following configuration:
+
+```yaml
+modbus_controller:
+  - id: modbus_evse
+    modbus_id: modbus_client
+    address: 0x1
+    update_interval: 5s
+    max_cmd_retries: 0
+    on_command_sent:
+      - switch.turn_off: light_sleep_sw
+
+sensor:
+  - platform: modbus_controller
+    id: evse_voltage_l1
+    modbus_controller_id: modbus_evse
+    name: "MB1"
+    register_type: read
+    address: 0x0001
+    value_type: U_WORD
+    device_class: "temperature"
+    on_value:
+      - lambda: "if (id(wifi_connected) != 0) id(light_sleep_sw).turn_on();"
+```
