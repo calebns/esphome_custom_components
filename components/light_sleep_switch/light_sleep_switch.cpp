@@ -14,8 +14,8 @@ void LightSleepSwitch::setup() {
     esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "early", &light_sleep_lock);
     esp_pm_lock_acquire(light_sleep_lock);
     esp_pm_config_t pm_conf {
-        .max_freq_mhz = 240,
-        .min_freq_mhz = 240,
+        .max_freq_mhz = 160,
+        .min_freq_mhz = 160,
         .light_sleep_enable = true,
     };
     esp_pm_configure(&pm_conf);
