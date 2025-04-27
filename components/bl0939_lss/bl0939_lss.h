@@ -5,17 +5,17 @@
 #include "esphome/components/sensor/sensor.h"
 
 namespace esphome {
-namespace bl0939 {
+namespace bl0939_lss {
 
-// https://datasheet.lcsc.com/lcsc/2108071830_BL-Shanghai-Belling-BL0939_C2841044.pdf
+// https://datasheet.lcsc.com/lcsc/2108071830_BL-Shanghai-Belling-BL0939_lss_C2841044.pdf
 // (unfortunately chinese, but the formulas can be easily understood)
 // Sonoff Dual R3 V2 has the exact same resistor values for the current shunts (RL=1miliOhm)
 // and for the voltage divider (R1=0.51kOhm, R2=5*390kOhm)
 // as in the manufacturer's reference circuit, so the same formulas were used here (Vref=1.218V)
-static const float BL0939_IREF = 324004 * 1 / 1.218;
-static const float BL0939_UREF = 79931 * 0.51 * 1000 / (1.218 * (5 * 390 + 0.51));
-static const float BL0939_PREF = 4046 * 1 * 0.51 * 1000 / (1.218 * 1.218 * (5 * 390 + 0.51));
-static const float BL0939_EREF = 3.6e6 * 4046 * 1 * 0.51 * 1000 / (1638.4 * 256 * 1.218 * 1.218 * (5 * 390 + 0.51));
+static const float BL0939_lss_IREF = 324004 * 1 / 1.218;
+static const float BL0939_lss_UREF = 79931 * 0.51 * 1000 / (1.218 * (5 * 390 + 0.51));
+static const float BL0939_lss_PREF = 4046 * 1 * 0.51 * 1000 / (1.218 * 1.218 * (5 * 390 + 0.51));
+static const float BL0939_lss_EREF = 3.6e6 * 4046 * 1 * 0.51 * 1000 / (1638.4 * 256 * 1.218 * 1.218 * (5 * 390 + 0.51));
 
 struct ube24_t {  // NOLINT(readability-identifier-naming,altera-struct-pack-align)
   uint8_t l;
@@ -57,7 +57,7 @@ union DataPacket {  // NOLINT(altera-struct-pack-align)
   };
 } __attribute__((packed));
 
-class BL0939 : public PollingComponent, public uart::UARTDevice {
+class BL0939_lss : public PollingComponent, public uart::UARTDevice {
  public:
   void set_voltage_sensor(sensor::Sensor *voltage_sensor) { voltage_sensor_ = voltage_sensor; }
   void set_current_sensor_1(sensor::Sensor *current_sensor_1) { current_sensor_1_ = current_sensor_1; }
@@ -87,13 +87,13 @@ class BL0939 : public PollingComponent, public uart::UARTDevice {
   sensor::Sensor *energy_sensor_sum_{nullptr};
 
   // Divide by this to turn into Watt
-  float power_reference_ = BL0939_PREF;
+  float power_reference_ = BL0939_lss_PREF;
   // Divide by this to turn into Volt
-  float voltage_reference_ = BL0939_UREF;
+  float voltage_reference_ = BL0939_lss_UREF;
   // Divide by this to turn into Ampere
-  float current_reference_ = BL0939_IREF;
+  float current_reference_ = BL0939_lss_IREF;
   // Divide by this to turn into kWh
-  float energy_reference_ = BL0939_EREF;
+  float energy_reference_ = BL0939_lss_EREF;
 
   static uint32_t to_uint32_t(ube24_t input);
 
@@ -103,5 +103,5 @@ class BL0939 : public PollingComponent, public uart::UARTDevice {
 
   void received_package_(const DataPacket *data) const;
 };
-}  // namespace bl0939
+}  // namespace bl0939_lss
 }  // namespace esphome

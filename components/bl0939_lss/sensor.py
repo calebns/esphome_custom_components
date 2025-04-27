@@ -26,13 +26,13 @@ CONF_ENERGY_1 = "energy_1"
 CONF_ENERGY_2 = "energy_2"
 CONF_ENERGY_TOTAL = "energy_total"
 
-bl0939_ns = cg.esphome_ns.namespace("bl0939")
-BL0939 = bl0939_ns.class_("BL0939", cg.PollingComponent, uart.UARTDevice)
+bl0939_lss_ns = cg.esphome_ns.namespace("bl0939_lss")
+BL0939_lss = bl0939_lss_ns.class_("BL0939_lss", cg.PollingComponent, uart.UARTDevice)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(BL0939),
+            cv.GenerateID(): cv.declare_id(BL0939_lss),
             cv.Optional(CONF_VOLTAGE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_VOLT,
                 accuracy_decimals=1,
