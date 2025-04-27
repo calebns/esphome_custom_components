@@ -1,5 +1,8 @@
 #pragma once
 
+#include <esp_pm.h>
+#include <esp_sleep.h>
+
 #include "esphome/core/component.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/sensor/sensor.h"
@@ -102,6 +105,8 @@ class BL0939_lss : public PollingComponent, public uart::UARTDevice {
   static bool validate_checksum(const DataPacket *data);
 
   void received_package_(const DataPacket *data) const;
+
+  esp_pm_lock_handle_t light_sleep_lock;
 };
 }  // namespace bl0939_lss
 }  // namespace esphome
