@@ -66,14 +66,17 @@ bool BL0939_lss::validate_checksum(const DataPacket *data) {
 }
 
 void BL0939_lss::update() {
-  esp_pm_lock_acquire(light_sleep_lock);  
+  /* Release all lock recursively and aquire once */
+  while (ESP_OK == esp_pm_lock_release(light_sleep_lock)) {}
+  esp_pm_lock_acquire(light_sleep_lock);
+
   this->flush();
   this->write_byte(BL0939_lss_READ_COMMAND);
   this->write_byte(BL0939_lss_FULL_PACKET);
 }
 
 void BL0939_lss::setup() {
-  esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "early", &light_sleep_lock);
+  esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "bl0939_lock", &light_sleep_lock);
 
   for (auto *i : BL0939_lss_INIT) {
     this->write_array(i, 6);
