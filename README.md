@@ -19,3 +19,13 @@ external_components:
 
 A component to support entering and exiting Light Sleep on ESP32.
 With example config applied to Sonoff MINIR4 the power consumption dropped from 0.6W to 0.08W in idle while still maintaining stable WiFi connection.
+
+### 2.2 `bl0939_lss`
+
+The fork of ESPHome version of BL0939 driver but suitable to be used with Light Sleep (BL0939 Light Sleep Safe).
+This power sensor can be found in Sonoff Dual R3 rev2.
+
+### 2.3 `bl0942_lss`
+
+The fork of ESPHome version of BL0942 driver but suitable to be used with Light Sleep (BL0942Light Sleep Safe).
+This power sensor can be found in Shelly PM Mini gen3.
