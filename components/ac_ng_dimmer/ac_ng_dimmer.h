@@ -1,66 +1,66 @@
 #pragma once
 
+#include "esphome.h"
+#include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
 #include "esphome/components/output/float_output.h"
 
 namespace esphome::ac_ng_dimmer {
 
-enum DimMethod { DIM_METHOD_LEADING_PULSE = 0, DIM_METHOD_LEADING, DIM_METHOD_TRAILING };
+class AcNgDimmer : public Component, public output::FloatOutput {
+public:
+    void setup() override {
+        // Konfiguracja Timer LEDC
+        ledc_timer_config_t ledc_timer = {};
+        ledc_timer.speed_mode       = LEDC_LOW_SPEED_MODE;
+        ledc_timer.timer_num        = LEDC_TIMER_0;
+        ledc_timer.duty_resolution  = LEDC_TIMER_13_BIT; // 0-8191
+        ledc_timer.freq_hz          = 100;               // 100Hz dla 50Hz sieci
+        ledc_timer.clk_cfg          = LEDC_AUTO_CLK;
+        ledc_timer_config(&ledc_timer);
 
-struct AcNgDimmerDataStore {
-  /// Zero-cross pin
-  ISRInternalGPIOPin zero_cross_pin;
-  /// Zero-cross pin number - used to share ZC pin across multiple dimmers
-  uint8_t zero_cross_pin_number;
-  /// Output pin to write to
-  ISRInternalGPIOPin gate_pin;
-  /// Value of the dimmer - 0 to 65535.
-  uint16_t value;
-  /// Minimum power for activation
-  uint16_t min_power;
-  /// Time between the last two ZC pulses
-  uint32_t cycle_time_us;
-  /// Time (in micros()) of last ZC signal
-  uint32_t crossed_zero_at;
-  /// Time since last ZC pulse to enable gate pin. 0 means not set.
-  uint32_t enable_time_us;
-  /// Time since last ZC pulse to disable gate pin. 0 means no disable.
-  uint32_t disable_time_us;
-  /// Set to send the first half ac cycle complete
-  bool init_cycle;
-  /// Dimmer method
-  DimMethod method;
+        // Konfiguracja Kanału LEDC
+        ledc_channel_config_t ledc_channel = {};
+        ledc_channel.speed_mode     = LEDC_LOW_SPEED_MODE;
+        ledc_channel.channel        = LEDC_CHANNEL_0;
+        ledc_channel.timer_sel      = LEDC_TIMER_0;
+        ledc_channel.intr_type      = LEDC_INTR_DISABLE;
+        ledc_channel.gpio_num       = GPIO_NUM_2; // TRIAC_PIN
+        ledc_channel.duty           = 8191;        // Startujemy od wyłączonego (stan 1)
+        ledc_channel.hpoint         = 0;
+        ledc_channel_config(&ledc_channel);
 
-  uint32_t timer_intr(uint32_t now);
+        // Konfiguracja ZCD (Zero Cross)
+        gpio_config_t io_conf = {};
+        io_conf.intr_type = GPIO_INTR_NEGEDGE;
+        io_conf.pin_bit_mask = (1ULL << GPIO_NUM_10); // ZCD_PIN
+        io_conf.mode = GPIO_MODE_INPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        gpio_config(&io_conf);
 
-  void gpio_intr();
-  static void s_gpio_intr(AcNgDimmerDataStore *store);
-#ifdef USE_ESP32
-  static void s_timer_intr();
-#endif
+        gpio_install_isr_service(0);
+        gpio_isr_handler_add(GPIO_NUM_10, zcd_isr, (void*)this);
+    }
+
+    static void IRAM_ATTR zcd_isr(void* arg) {
+        // KLUCZ: Resetujemy sprzętowy timer LEDC dokładnie w momencie przejścia przez zero
+        ledc_timer_rst(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0);
+    }
+
+    void write_state(float state) override {
+        if (state < 0.01f) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 8191);
+        } else if (state > 0.99f) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+        } else {
+            // Im wyższa moc, tym mniejszy duty (wcześniejsze odpalenie triaka zerem)
+            uint32_t duty = (uint32_t)((1.0f - state) * 8191.0f);
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+        }
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    }
 };
 
-class AcNgDimmer : public output::FloatOutput, public Component {
- public:
-  void setup() override;
-
-  void dump_config() override;
-  void set_gate_pin(InternalGPIOPin *gate_pin) { gate_pin_ = gate_pin; }
-  void set_zero_cross_pin(InternalGPIOPin *zero_cross_pin) { zero_cross_pin_ = zero_cross_pin; }
-  void set_zero_cross_interrupt_type(gpio::InterruptType type) { zero_cross_interrupt_type_ = type; }
-  void set_init_with_half_cycle(bool init_with_half_cycle) { init_with_half_cycle_ = init_with_half_cycle; }
-  void set_method(DimMethod method) { method_ = method; }
-
- protected:
-  void write_state(float state) override;
-
-  InternalGPIOPin *gate_pin_;
-  InternalGPIOPin *zero_cross_pin_;
-  gpio::InterruptType zero_cross_interrupt_type_;
-  AcNgDimmerDataStore store_;
-  bool init_with_half_cycle_;
-  DimMethod method_;
-};
-
-}  // namespace esphome::ac_ng_dimmer
+}
